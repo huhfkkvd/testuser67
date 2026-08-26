@@ -71,3 +71,27 @@ ENV XUI_DB_DSN=""
 EXPOSE 2053
 CMD [ "./x-ui" ]
 ENTRYPOINT [ "/app/DockerEntrypoint.sh" ]
+server {
+    listen $PORT;  # همون پورتی که Railway انتظار داره اپ روش گوش بده
+
+    # مسیر پنل ادمین - حتماً یک مسیر عجیب/غیرقابل حدس بذار، نه صفحه پیش‌فرض
+    location /your-secret-panel-path/ {
+        proxy_pass http://127.0.0.1:2053/;   # پورت داخلی پنل 3X-ui
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # مسیر WebSocket برای VLESS
+    location /ws {
+        proxy_pass http://127.0.0.1:10000;   # پورت داخلی اینباند Xray (که در تنظیمات inbound ست می‌کنی)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    # هر چیز دیگه‌ای - می‌تونی یک سایت ساده fake اینجا بذاری برای کمولاژ بیشتر
+    location / {
+        return 404;
+    }
+}
