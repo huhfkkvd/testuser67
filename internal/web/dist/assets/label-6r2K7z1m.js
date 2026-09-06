@@ -1,0 +1,1 @@
+function e(e,t){return(t||``).trim()||(e||``).trim()}function t(t,n,r=1){let i=e(t.tag,t.remark)||(t.id==null?``:`inbound-${t.id}`),a=r>1?i:void 0,o=t.remark||t.tag||(t.id==null?``:`${t.id}`),s=o?`-${o.replace(/[^\w.-]+/g,`_`)}`:``;return{label:a,fileName:`${n||`client`}${r>1?s:``}.conf`,qrRemark:r>1&&i?[i,n].filter(Boolean).join(` - `):n||``}}export{t as n,e as t};
