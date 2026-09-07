@@ -29,10 +29,16 @@ const (
 )
 
 var routes = map[string]string{
-	"/xvpnws/":  "20868", // inbound #1 (VLESS)
-	"/xvpnws2/": "20869", // inbound #2 (e.g. VMess)
-	"/xvpnws3/": "20870", // inbound #3 (e.g. Trojan)
-	"/xvpnws4/": "20871", // inbound #4 (spare)
+	"/x4g1/":  "20861",
+	"/x4g2/":  "20862",
+	"/x4g3/":  "20863",
+	"/x4g4/":  "20864",
+	"/x4g5/":  "20865",
+	"/x4g6/":  "20866",
+	"/x4g7/":  "20867",
+	"/x4g8/":  "20868",
+	"/x4g9/":  "20869",
+	"/x4g10/": "20870",
 }
 
 func main() {
