@@ -44,7 +44,6 @@ func main() {
 	cmd.Env = append(os.Environ(),
 		"XUI_DB_FOLDER="+dataDir,
 		"XUI_LOG_FOLDER="+filepath.Join(dataDir, "logs"),
-		"XUI_PORT=3000",
 	)
 	if err := cmd.Run(); err != nil {
 		fmt.Println("run error:", err)
