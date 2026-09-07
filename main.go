@@ -6,12 +6,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 const releaseURL = "https://github.com/MHSanaei/3x-ui/releases/latest/download/x-ui-linux-amd64.tar.gz"
+
+// publicPort is the single port Orbit/Flux forwards from the internet.
+// panelPort and vlessPort are internal-only; nothing outside the container can reach them directly.
+// vlessPrefix must match the exact "Path" you configure on the Xray VLESS+WS inbound inside x-ui.
+const (
+	publicPort  = "2053"
+	panelPort   = "20530"
+	vlessPort   = "20868"
+	vlessPrefix = "/xvpnws/"
+)
 
 func main() {
 	installDir := "/app/x-ui"
@@ -44,10 +58,43 @@ func main() {
 	cmd.Env = append(os.Environ(),
 		"XUI_DB_FOLDER="+dataDir,
 		"XUI_LOG_FOLDER="+filepath.Join(dataDir, "logs"),
+		"XUI_PORT="+panelPort,
 	)
-	if err := cmd.Run(); err != nil {
+
+	if err := cmd.Start(); err != nil {
+		fmt.Println("failed to start x-ui:", err)
+		os.Exit(1)
+	}
+
+	go startProxy()
+
+	if err := cmd.Wait(); err != nil {
 		fmt.Println("run error:", err)
 		os.Exit(1)
+	}
+}
+
+func startProxy() {
+	time.Sleep(3 * time.Second)
+
+	panelTarget, _ := url.Parse("http://127.0.0.1:" + panelPort)
+	vlessTarget, _ := url.Parse("http://127.0.0.1:" + vlessPort)
+
+	panelProxy := httputil.NewSingleHostReverseProxy(panelTarget)
+	vlessProxy := httputil.NewSingleHostReverseProxy(vlessTarget)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, vlessPrefix) {
+			vlessProxy.ServeHTTP(w, r)
+			return
+		}
+		panelProxy.ServeHTTP(w, r)
+	})
+
+	fmt.Println("Reverse proxy listening on :" + publicPort)
+	if err := http.ListenAndServe(":"+publicPort, mux); err != nil {
+		fmt.Println("proxy error:", err)
 	}
 }
 
