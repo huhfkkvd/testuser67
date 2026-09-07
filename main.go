@@ -18,14 +18,22 @@ import (
 const releaseURL = "https://github.com/MHSanaei/3x-ui/releases/latest/download/x-ui-linux-amd64.tar.gz"
 
 // publicPort is the single port Orbit/Flux forwards from the internet.
-// panelPort and vlessPort are internal-only; nothing outside the container can reach them directly.
-// vlessPrefix must match the exact "Path" you configure on the Xray VLESS+WS inbound inside x-ui.
+// panelPort is internal-only for the x-ui admin panel.
+// routes maps a unique WebSocket path to the internal port of each inbound.
+// To add a new inbound: pick a new unique path + a new internal port (not used elsewhere),
+// add a line below, then create the matching inbound inside x-ui with that exact
+// Port + Path + Network: ws + Security: none.
 const (
-	publicPort  = "2053"
-	panelPort   = "20530"
-	vlessPort   = "20868"
-	vlessPrefix = "/xvpnws/"
+	publicPort = "2053"
+	panelPort  = "20530"
 )
+
+var routes = map[string]string{
+	"/xvpnws/":  "20868", // inbound #1 (VLESS)
+	"/xvpnws2/": "20869", // inbound #2 (e.g. VMess)
+	"/xvpnws3/": "20870", // inbound #3 (e.g. Trojan)
+	"/xvpnws4/": "20871", // inbound #4 (spare)
+}
 
 func main() {
 	installDir := "/app/x-ui"
@@ -78,16 +86,21 @@ func startProxy() {
 	time.Sleep(3 * time.Second)
 
 	panelTarget, _ := url.Parse("http://127.0.0.1:" + panelPort)
-	vlessTarget, _ := url.Parse("http://127.0.0.1:" + vlessPort)
-
 	panelProxy := httputil.NewSingleHostReverseProxy(panelTarget)
-	vlessProxy := httputil.NewSingleHostReverseProxy(vlessTarget)
+
+	routeProxies := make(map[string]*httputil.ReverseProxy)
+	for path, port := range routes {
+		target, _ := url.Parse("http://127.0.0.1:" + port)
+		routeProxies[path] = httputil.NewSingleHostReverseProxy(target)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, vlessPrefix) {
-			vlessProxy.ServeHTTP(w, r)
-			return
+		for path, proxy := range routeProxies {
+			if strings.HasPrefix(r.URL.Path, path) {
+				proxy.ServeHTTP(w, r)
+				return
+			}
 		}
 		panelProxy.ServeHTTP(w, r)
 	})
