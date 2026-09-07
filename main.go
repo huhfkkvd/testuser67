@@ -33,11 +33,18 @@ func main() {
 		return nil
 	})
 
+	dataDir := "/app/data"
+	os.MkdirAll(dataDir, 0755)
+	os.MkdirAll(filepath.Join(dataDir, "logs"), 0755)
+
 	cmd := exec.Command(binPath)
 	cmd.Dir = installDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
+	cmd.Env = append(os.Environ(),
+		"XUI_DB_FOLDER="+dataDir,
+		"XUI_LOG_FOLDER="+filepath.Join(dataDir, "logs"),
+	)
 	if err := cmd.Run(); err != nil {
 		fmt.Println("run error:", err)
 		os.Exit(1)
