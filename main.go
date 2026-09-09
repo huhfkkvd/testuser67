@@ -19,27 +19,13 @@ const releaseURL = "https://github.com/MHSanaei/3x-ui/releases/latest/download/x
 
 // publicPort is the single port Orbit/Flux forwards from the internet.
 // panelPort is internal-only for the x-ui admin panel.
-// routes maps a unique WebSocket path to the internal port of each inbound.
-// To add a new inbound: pick a new unique path + a new internal port (not used elsewhere),
-// add a line below, then create the matching inbound inside x-ui with that exact
-// Port + Path + Network: ws + Security: none.
+// vlessPrefix must match the exact "Path" you configure on the Xray VLESS+WS inbound inside x-ui.
 const (
-	publicPort = "2053"
-	panelPort  = "20530"
+	publicPort  = "2053"
+	panelPort   = "20530"
+	vlessPort   = "20868"
+	vlessPrefix = "/xvpnws/"
 )
-
-var routes = map[string]string{
-	"/x4g1/":  "20861",
-	"/x4g2/":  "20862",
-	"/x4g3/":  "20863",
-	"/x4g4/":  "20864",
-	"/x4g5/":  "20865",
-	"/x4g6/":  "20866",
-	"/x4g7/":  "20867",
-	"/x4g8/":  "20868",
-	"/x4g9/":  "20869",
-	"/x4g10/": "20870",
-}
 
 func main() {
 	installDir := "/app/x-ui"
